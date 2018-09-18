@@ -4,7 +4,11 @@
 
 <script>
   export default {
-    text: 'codepan yangcx'
+    data () {
+      return {
+        text: 'codepan yangcx'
+      }
+    }
   }
 </script>
 <style scoped>

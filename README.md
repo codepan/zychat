@@ -4,7 +4,7 @@
 ```
 mkdir zychat # zychat即为项目名称
 cd zychat # 进入项目
-npm init # 此项项目根目录下面就会出现一个package.json的文件，这是npm项目的配置文件
+npm init # 此项目根目录下面就会出现一个package.json的文件，这是npm项目的配置文件
 ```
 安装依赖
 项目使用vue+webpack技术实现，所以不用多说，肯定需要安装vue和webpack两个包
@@ -15,7 +15,7 @@ npm i -D vue webpack
 ```
 mkdir src
 ```
-新建一个App.vue文件，然后写入如下代码
+在src目录下新建一个App.vue文件，然后写入如下代码
 ```vue
 <template>
     <div id="test">{{text}}</div>
@@ -23,10 +23,13 @@ mkdir src
 
 <script>
   export default {
-    text: 'codepan yangcx'
+    data () {
+      return {
+        text: 'codepan yangcx'
+      }
+    }
   }
 </script>
-
 <style scoped>
     #test{
         font-size: 12px;
@@ -35,7 +38,7 @@ mkdir src
 </style>
 ```
 * 这个vue文件是无法在浏览器中直接运行的，因为浏览器压根不认识这种文件类型啊（浏览器内心独白：臣妾做不到啊）。
-* 那我们的办法就是使用webpack将其打包处理成浏览器能认识的文件类型，回忆一下：C能识别的资源类型有：html,css,js,image(png,jpeg),json等等
+* 那我们的办法就是使用webpack将其打包处理成浏览器能认识的文件类型，回忆一下：浏览器能识别的资源类型有：html,css,js,image(png,jpeg),json等等
 * 再看上面的vue文件我们会发现`<template>`标签里面是html代码，`<script>`标签里面是js代码，`<style>`标签里面是css代码，那么有什么文件可以同时包含上面三种资源呢？
 * 答案是：只有js文件，没错，js文件是不二选择，webpack也是这么想的。webpack把所有的资源都按模块对待，每个文件都是一个模块，将这些模块按照其之间的依赖关系最后打包成一个统一的js文件然后输出出来。
 * 注意上面的措辞：
@@ -219,6 +222,50 @@ module.exports = {
 增加css-loader的配置，OK，考验人品的时候到了，运行npm run build，见证奇迹的时刻。。。。。。。千呼万唤始出来，终于build成功了，长舒一口气。
 到此为止，初始化项目架构就算完成了，你是一头雾水还是豁然开朗呢？一头雾水不是说我讲的不清楚，而是欠缺一个性感的总结。
 
+且慢，打包成功，但是你想看看你制作的"精美的"网页怎么办？
+
+新建一个html文件，在文档末尾手动引入生成的bundle.js文件，然后浏览器打开这个html文件，DuangDuangDuang，展现出来了。可以你会发现一个问题：添加的那两行css代码好（肯）像（定）没有生效哎。
+为什么没有生效，请打开浏览器控制台中的Elements面板，看一下生成的html代码，发现没有引入任何css文件，或者说没有`<style>`标签，或者说没有行内样式，可是明明引入了css-loader呀。
+
+端起小板凳，坐正，"敲黑板，讲重点"：
+css-loader的作用是可以将通过commonJS的require语法或者ES6的import语法或者css的@import语法导入的css文件进行合并处理。但是处理后的css代码仍然存在于js文件中，并没有单独生成css文件通过link被链入到html文件中，也没有被js通过`<style>`标签动态地插入到html文件中，此时我们也就得到了两种处理方案：
+1. 生成css代码放在js中，通过js代码动态的将css插入html中的`<style>`标签体中-----内联样式
+2. 生成单独的css文件，html中link进来------外链样式
+
+第一种比较简单，第二种档次有些高，目前讲有些不合适。
+站在前辈的肩膀上，问题处理起来总是那么简单，曾几何时我见过一个叫做style-loader的东西，一脸懵逼的上网搜它和css-loader是什么关（基）系（友）？
+
+css-loader的作用上面已经解释，我现在解释一下style-loader这个货，它是"样式 loader"大家族中的大哥大，董事长，最后一道工序需要由它来完成。当css-loader将样式文件合并处理之后，交给style-loader，style-loader动态的将样式插入到html的`<style>`标签体中，解释道这里，动手安装它吧。
+```
+npm i -D style-loader
+```
+
+每个loader安装之后都需要告诉webpack的，这个不要让我每次都提醒了，打开webpack.config.js文件：
+```
+...
+module.exports = {
+  ...
+  module: {
+    rules: [
+      ...
+      {
+        test: /.css$/,
+        use: ['style-loader', 'css-loader']
+      }
+    ]
+  },
+ ...
+}
+```
+将原来的`loader: 'css-loader'`修改为：`use: ['style-loader', 'css-loader']`
+其中
+1. `rule.loader是rule.use: [{loader}]`的简写
+2. `rule.loaders`别名为`rule.use`，`rule.loaders`已经过时，请使用`rule.use`替代
+3. webpack加载loader处理是从右至左的，因此css-loader必须写在后面，当css-loader处理完成之后，再由style-loader处理
+
+重新build，刷新一下刚才的页面，好吧，帮你到这里，**掌声响起**
+![](./issue-image/issue4.png)
+
 **总结一下：**
 1. npm init
 2. npm i -D webpack vue // webpack打包 vue开发，不要再问我为什么要安装这两个玩意
@@ -233,4 +280,5 @@ module.exports = {
 11. 添加VueLoaderPlugin // vue-loader 15.*以后必须依赖此插件
 12. vue-template-compiler // 解析vue文件中的template
 13. 添加css-loader
-
+14. style-loader
+15. 添加style-loader

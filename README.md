@@ -1,284 +1,148 @@
-# 项目架构的搭建
-## 初始化项目架构
-打开终端 初始化npm项目
-```
-mkdir zychat # zychat即为项目名称
-cd zychat # 进入项目
-npm init # 此项目根目录下面就会出现一个package.json的文件，这是npm项目的配置文件
-```
-安装依赖
-项目使用vue+webpack技术实现，所以不用多说，肯定需要安装vue和webpack两个包
-```
-npm i -D vue webpack
-```
-创建源代码目录 src
-```
-mkdir src
-```
-在src目录下新建一个App.vue文件，然后写入如下代码
-```vue
-<template>
-    <div id="test">{{text}}</div>
-</template>
+dev1的分支中我们初始化了一个最简单的vue项目架构，功能及其简陋到只能build后，手动创建一个html文件，然后再在html文件中引入build后的js文件，最后使用浏览器打开html文件。
+上面描述的那段过程存在以下几个DT（蛋疼）的地方。
+1. 只能build，无法直接运行看效果（即无法run dev）
+2. 没有html文件，需要手动创建
+3. html文件没有自动引入打包后的文件
+4. 开发过程中，无法自动打开浏览器然后打开html页面
+5. 无法实时刷新（热更新）
 
-<script>
-  export default {
-    data () {
-      return {
-        text: 'codepan yangcx'
-      }
-    }
-  }
-</script>
-<style scoped>
-    #test{
-        font-size: 12px;
-        color: green;
-    }
-</style>
-```
-* 这个vue文件是无法在浏览器中直接运行的，因为浏览器压根不认识这种文件类型啊（浏览器内心独白：臣妾做不到啊）。
-* 那我们的办法就是使用webpack将其打包处理成浏览器能认识的文件类型，回忆一下：浏览器能识别的资源类型有：html,css,js,image(png,jpeg),json等等
-* 再看上面的vue文件我们会发现`<template>`标签里面是html代码，`<script>`标签里面是js代码，`<style>`标签里面是css代码，那么有什么文件可以同时包含上面三种资源呢？
-* 答案是：只有js文件，没错，js文件是不二选择，webpack也是这么想的。webpack把所有的资源都按模块对待，每个文件都是一个模块，将这些模块按照其之间的依赖关系最后打包成一个统一的js文件然后输出出来。
-* 注意上面的措辞：
-    * "按照依赖关系"，那这个依赖关系webpack有是怎么知道的呢？当然是我们告诉它呀，怎么告诉呢？答案是通过一个js文件来告诉它，这个js文件被称为打包入口文件，webpack打包时就会首先读取这个入口文件，然后根据依赖关系一个个去处理
-    * "最后打包成一个统一的js文件然后输出出来"，那这个打包后的文件放在哪里，该叫什么名字，我们得告诉webpack吧，不要为难人家好吗？（当然webpack4.*之后默认的入口为'./src/'和默认出口'./dist'）
+下面我们这个dev2的分支就解决以上几个问题，一个一个攻破。
 
-巴拉巴拉这么长时间，你应该明白接下来需要做两件事，一件事是我们需要创建一个js文件，作为webpack打包时的入口文件
-在src目录下面新建一个index.js文件
-```vue
-import Vue from 'vue'
-import App from './App.vue'
+首先看第一个问题：run dev的背后到底干了什么？
 
-const root = document.createElement('div')
-document.body.appendChild(root)
+> "没吃过猪肉，总应该见过猪跑"。run dev之后本地启动了一个web server，然后浏览器被自动打开，然后咱们的html页面也被自动打开，然后修改代码发现浏览器还能实时刷新。
 
-new Vue ({
-  render: h => h(App)
-}).$mount(root)
-```
-另一件事是我们需要告诉webpack入口文件是哪个，打包后输出文件该放在哪里，文件名该叫什么？问题来了怎么告诉webpack呢？好在官方想到我们会有这个疑惑，状告无门是最痛苦的，默认webpack会读取项目根目录下面一个叫做`webpack.config.js`的文件作为其配置文件，这个文件的作用大白话解释就是："你想对webpack说的话就请在这个文件里说吧！"
-好了，我们在根目录下面创建webpack.config.js文件
-```js
-// 引入path模块，这个模块是nodejs内置模块，用来处理路径的
-const path = require('path')
+好吧 ，其实只要第一个问题解决了，其实也就顺带把剩下的几个问题一并解决了，所以，先解决2、3、4、5，最后1***迎刃而解***。
 
-// module.exports是commonjs模块化的语法，nodejs模块采用的就是commonjs模块规范
-module.exports = {
-  // entry: 告诉webpack，入口文件去这里找
-  entry: path.join(__dirname, './src/index.js'), // __dirname是node内置变量，表示当前文件所在的目录，join方法将前者和后者拼接成绝对路径
-  // output：告诉webpack，输入文件具体参见这里
-  output: {
-    filename: "bundle.js", // 打包后的文件芳名是bundle.js
-    path: path.join(__dirname, 'dist') // 打包后的文件家庭住址在dist目录下面
-  }
-}
+问题2：没有html文件，那咱就创建一个吧
+项目根目录下创建index.html文件
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app">test</div>
+</body>
+</html>
 ```
 
-基本差不多了，我们现在可以使用webpack去打包当前项目，webpack打包项目是使用webpack命令进行打包的，并且得告诉它一些参数，可是webpack命令每次都在命令行手敲一遍，着实非常痛苦。
-npm太贴心了，它可以让我们在package.json文件中配置命令的快速执行。package.json中有一个scripts属性，该属性下面配置需要执行的命令，key代表命令，value代表真正需要执行的命令，然后通过`npm run key`就相当于执行value。
-打开package.json文件，在里面加入如下代码：
-```
- "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1", // 这个是默认生成的，不用理会
-    "build": "webpack --config webpack.config.js" // 需要加入的，不用解释，相信你能够看懂
-  },
-```
-现在是真的差不多了，是时候终端运行`npm run build`了，预期的结果是产生dist目录，目录下面产生bundle.js文件
+问题4，问题5：自动打开浏览器，自动打开html文件，实时刷新，想想这些肯定需要建立在有一个web server的基础上才是能够实现的，没有服务器，这一切都是白谈。
 
-Just Do It
+所以我们需要创建一个服务器，然后服务器去加载index.html文件，同时服务器需要就有以上自动打开浏览器和实时刷新的能力，你所想的我都可以给你，这个东西就是webpack的一个插件：webpack-dev-server
 
+先别问我它是什么，先安装它再说
 ```
-npm run build
+npm i -D webpack-dev-server
 ```
 
-我好像又欺骗了你，控制台哐哐哐的报错，知错能改善莫大焉，认真看这些错误，肯定能看懂
-![Image text](./issue-image/WX20180918-113809.png)
-英语太烂，大概翻译一下：必须安装一个webpack CLI的玩意，以下是推荐的一些选择，聪明的npm将帮你使用`npm install -D webpack-cli`，然后问你愿意吗，回答yes or no。
+安装好之后我们需要运行它，运行也是在命令行直接敲命令就能运行，但是需要配置好多参数，命令行直接搞会累死的，那么回忆一下package.json文件中的scripts选项，没错，在这配置一下，就能快捷的运行它了。
 
-我懵逼了，webpack-cli是什么鬼，为什么需要它，它和webpack是什么关系，度娘一下，马上知道：
-
-webpack打包是cli的功劳，在4.*版本以前cli是放在webpack包中的，而到了4.*这个功能被提出来单独放在webpack-cli中了
-也就是说cli功能从webpack移到了webpack-cli，所以如果你要使用cli功能，除了安装 webpack 外，还需要安装 webpack-cli
-
-刨根问底完毕，我们按照它说的做吧，输入yes回车，或者直接输入以下命令：
+打开package.json文件
 ```
-npm i -D webpack-cli
-npm run build // 再次尝试build
-```
-不幸的又报错了
-
-![](./issue-image/WX20180918-130503.png)
-
-说是：App.vue模块解析失败，你可能需要安装一个适当的loader去处理这种文件类型
-这提示我就不能忍，还是没有人聪明啊，什么叫适当的loader，难道你就判断不出来需要什么loader吗？
-大胆猜测，这是vue文件，是否有一个叫做vue-loader的loader呢，于是上网寻找，发现"我简直太聪（自）明（恋）了"。
-不扯了，安装这个`vue-loader`（其实这个loader稍微有些经验的coder一开始就会安装的，只是我想让你搞明白为什么要安装它，它是个什么东西，知其然也得知其所以然）
-```
-npm i -D vue-loader
-```
-![](./issue-image/WX20180918-133403.png)
-
-出现了两条警告，第二条警告无关痛痒，可以先不管，请看第一条警告：
-vue-loader需要一个css-loader,但是没有安装，你必须自己手动安装它，好吧，这里我解释一下css-loader是什么？为什么需要它？
-
-> 观察vue文件，可以看出vue文件是由html、js、css三大块组成，咱们现在开发都是讲究模块化编程的，vue-loader也不例外，它把处理这三大块东西的工具也单独搞了模块，也就是说vue-loader需要依赖
-处理html的模块和处理css的模块，才能正常工作，就像汽车需要加油/气/电才能发动一样的道理。
-
-其中处理`<style>`中的内容的loader用脚后跟想想应该叫什么名字？没错，就是这个`css-loader`
-
-听它的话，安装css-loader
-```
-npm i -D css-loader
-```
-继续执着的build，不要打我，又报错了，错误依然是说无法解析vue文件。why？明明已经安装vue-loader，为什么还是无法解析vue文件？
-
-听我解释，你是不是傻，虽然你安装vue-loader模块不亦乐乎，但是webpack压根不知道你安装了呀，你需要告诉它：hi，webpack，我已经安装了vue-loader，你现在可以用这个loader去处理*.vue文件了。
-好吧，接下来让我去嘱咐webpack吧
-打开webpack.config.js文件
-```
-const path = require('path')
-
-module.exports = {
-  entry: path.join(__dirname, './src/index.js'),
-  output: {
-    filename: "bundle.js",
-    path: path.join(__dirname, 'dist')
-  },
-  module: {
-    rules: [
-      {
-        test: /.vue$/,
-        loader: 'vue-loader'
-      }
-    ]
-  }
-}
-```
-增加module配置项，解释一下，顺带也说一下历史吧。
-module.rules是个数组，里面指定处理各个文件类型的loader，举个栗子：使用vue-loader去处理后缀为vue的文件。
-test是个正则表达式，匹配需要处理的文件类型；loader用来指定loader。
-
-module.rules是webpack4.*的语法，以前的语法是module.loaders。
-
-这次肯定行了，继续build，捂脸~~~，男人的话你怎么能相信呢？
-![](./issue-image/issue1.png)
-翻译：vue-loader没有使用一个对应的插件。确定在你的webpack配置文件中包含了VueLoaderPlugin插件。
-理解了，需要配置一个VueLoaderPlugin的插件，你是不是想问我VueLoaderPlugin插件是神马？怎么又要搞个这玩意？我想说我不（也）告（不）诉（知）你（道）。还是上网找找答案吧。
-> vue-loader在15.*之后的版本都需要一个VueLoaderPlugin的
-
-你妈先了解到这里，反正在我"小的时候"记得没有VueLoaderPlugin插件这个东西啊。
-打开webpack.config.js文件，加入以下代码：
-```
-...
-const {VueLoaderPlugin} = require('vue-loader')
-
-module.exports = {
-  ...
-  module: {
-    rules: [
-      {
-        test: /.vue$/,
-        loader: 'vue-loader'
-      }
-    ]
-  },
-  plugins: [new VueLoaderPlugin()]
-}
-
-```
-首先导入Plugin，然后通过plugins配置项将其添加进去，再次运行build
-![](./issue-image/issue2.png)
-报错了，老生常谈的错误，还是提示vue-loader依赖一个vue-template-compiler模块，上面分析过vue文件，这个模块就是处理`<template>`里面的内容的，名字好变态怎么不叫`html-loader`呢，不按套路出牌。
-那就安装呗：
-```
-npm i -D vue-template-compiler
-```
-运行build，简直要报警了，怎么还是报错，内心不强大的话肯定早就放弃了，但是别担心，有我帮忙，一切不是事
-![](./issue-image/issue3.png)
-大致的意思是：无法解析这个"#"号，可能需要一个loader去处理这个文件类型，还记得上面安装的那个`css-loader`吗，没错就是这家伙没发挥作用，咱们又忘了将它告诉webpack，使用css-loader处理vue文件中的`<style`>了
-打开webpack.config.js文件
-```
-...
-module.exports = {
-  ...
-  module: {
-    rules: [
-      {
-        test: /.vue$/,
-        loader: 'vue-loader'
-      },
-      {
-        test: /.css$/,
-        loader: 'css-loader'
-      }
-    ]
-  },
-  plugins: [new VueLoaderPlugin()]
-}
-
-```
-增加css-loader的配置，OK，考验人品的时候到了，运行npm run build，见证奇迹的时刻。。。。。。。千呼万唤始出来，终于build成功了，长舒一口气。
-到此为止，初始化项目架构就算完成了，你是一头雾水还是豁然开朗呢？一头雾水不是说我讲的不清楚，而是欠缺一个性感的总结。
-
-且慢，打包成功，但是你想看看你制作的"精美的"网页怎么办？
-
-新建一个html文件，在文档末尾手动引入生成的bundle.js文件，然后浏览器打开这个html文件，DuangDuangDuang，展现出来了。可以你会发现一个问题：添加的那两行css代码好（肯）像（定）没有生效哎。
-为什么没有生效，请打开浏览器控制台中的Elements面板，看一下生成的html代码，发现没有引入任何css文件，或者说没有`<style>`标签，或者说没有行内样式，可是明明引入了css-loader呀。
-
-端起小板凳，坐正，"敲黑板，讲重点"：
-css-loader的作用是可以将通过commonJS的require语法或者ES6的import语法或者css的@import语法导入的css文件进行合并处理。但是处理后的css代码仍然存在于js文件中，并没有单独生成css文件通过link被链入到html文件中，也没有被js通过`<style>`标签动态地插入到html文件中，此时我们也就得到了两种处理方案：
-1. 生成css代码放在js中，通过js代码动态的将css插入html中的`<style>`标签体中-----内联样式
-2. 生成单独的css文件，html中link进来------外链样式
-
-第一种比较简单，第二种档次有些高，目前讲有些不合适。
-站在前辈的肩膀上，问题处理起来总是那么简单，曾几何时我见过一个叫做style-loader的东西，一脸懵逼的上网搜它和css-loader是什么关（基）系（友）？
-
-css-loader的作用上面已经解释，我现在解释一下style-loader这个货，它是"样式 loader"大家族中的大哥大，董事长，最后一道工序需要由它来完成。当css-loader将样式文件合并处理之后，交给style-loader，style-loader动态的将样式插入到html的`<style>`标签体中，解释道这里，动手安装它吧。
-```
-npm i -D style-loader
-```
-
-每个loader安装之后都需要告诉webpack的，这个不要让我每次都提醒了，打开webpack.config.js文件：
-```
-...
-module.exports = {
-  ...
-  module: {
-    rules: [
-      ...
-      {
-        test: /.css$/,
-        use: ['style-loader', 'css-loader']
-      }
-    ]
+{
+ ...
+  "scripts": {
+   ...
+    "dev": "webpack-dev-server --inline --hot --open --port 4000",
+    "build": "webpack --config webpack.config.js"
   },
  ...
 }
 ```
-将原来的`loader: 'css-loader'`修改为：`use: ['style-loader', 'css-loader']`
-其中
-1. `rule.loader是rule.use: [{loader}]`的简写
-2. `rule.loaders`别名为`rule.use`，`rule.loaders`已经过时，请使用`rule.use`替代
-3. webpack加载loader处理是从右至左的，因此css-loader必须写在后面，当css-loader处理完成之后，再由style-loader处理
+在scripts配置项中配置dev那段代码，到时候在命令行运行npm run dev就相当于执行了webpack-dev-server xxx的命令，解释一下命令中的参数的含义：
+> 1. inline  自动刷新
+> 2. hot 热加载
+> 3. open 自动在默认浏览器中打开
+> 4. port 指定监听端口为 4000 
+> 5. host 可以指定服务器的IP，不指定默认为127.0.0.1（也就是localhost）
 
-重新build，刷新一下刚才的页面，好吧，帮你到这里，**掌声响起**
-![](./issue-image/issue4.png)
+迫不及待的想去运行一把了，命令行中输入`npm run dev`，你会看到浏览器被打开了，并且自动打开了刚才我们在项目根目录下的index.html文件，是不是很神奇，这里又得解释一下了：
 
-**总结一下：**
-1. npm init
-2. npm i -D webpack vue // webpack打包 vue开发，不要再问我为什么要安装这两个玩意
-3. App.vue // 编写vue组件
-4. index.js // 入口文件
-5. webpack.config.js // webpack配置文件
-6. webpack --config webpack.config.js
-7. 配置entry output
-8. vue-loader // 处理vue文件的loader
-9. css-loader // vue-loader依赖此loader
-10. 添加vue-loader module.rules
-11. 添加VueLoaderPlugin // vue-loader 15.*以后必须依赖此插件
-12. vue-template-compiler // 解析vue文件中的template
-13. 添加css-loader
-14. style-loader
-15. 添加style-loader
+默认webpack-dev-server会在浏览器中打开项目下面的index.html文件，如果没有则会显示出项目的所有目录。可以做个试验：重命名index.html文件为test.html，你会发现项目目录显示在了浏览器里面，
+那是因为webpack-dev-server傻眼了，找不到index.html文件，所以就只好显示项目目录了，不然报错多尴尬~~~
+
+
+问题又来了，虽然打开了index.html，但是我们真正想看到的是APP.vue呀，可是现在index.html和APP.vue还半毛钱关系都没有，那怎么才能让它俩有关系呢？
+
+
+想一下APP.vue文件是通过src目录下面的index.js文件导出的，然后webpack又是根据这个index.js文件打包后生成一个dist目录下面的bundle.js文件的，也就是说App.vue最终被webpack"折腾"成了bundle.js文件，
+好，答案出来了：index.html文件中引入这个bundle.js文件，这样它俩的"红线"不就牵成功了吗？没错，就是这样的。
+
+之前咱们在index.html文件中手动引入bundle.js简直是太low了，我们需要借助工具帮我们自动注入这个家伙，现在请这个工具闪亮登场：html-webpack-plugin
+*（这是在解决问题3哦）*
+>科普一下html-webpack-plugin
+不好意思，其实我也太懂，就知道它可以加载html文件，并且可以将webpack.config.js文件中output配置项配置的输出文件自动注入到html文件中，就先了解这么多吧
+
+安装它
+```
+npm i -D html-webpack-plugin
+```
+然后打开webpack.config.js文件，添加进这个插件，插件需要传入一个options，里面是一些配置
+```
+...
+const HtmlWebpackPlugin = require('html-webpack-plugin')
+module.exports = {
+ ...
+  output: {
+    filename: "bundle.js",
+    path: path.join(__dirname, 'dist')
+  },
+  ...
+  plugins: [
+    new VueLoaderPlugin(),
+    new HtmlWebpackPlugin({
+      filename: 'index.html',
+      template: 'index.html',
+      inject: 'body'
+    })
+  ]
+}
+
+```
+引入html-webpack-plugin插件，然后在plugins配置项的数组中增加一个html-webpack-plugin实例，并且传入一些配置参数，解释一下：
+> 1. filename html文件名，默认是index.html
+> 2. template 指定你生成的文件所依赖哪一个html文件模板，模板类型可以是html、jade、ejs等。但是要注意的是，如果想使用自定义的模板文件的时候，你需要安装对应的loader哦。
+> 3. inject 有四个值： true body head false
+>   * true 默认值，script标签位于html文件的 body 底部
+>   * body script标签位于html文件的 body 底部
+>   * head script标签位于html文件的 head中
+>   * false 不插入生成的js文件，这个几乎不会用到的
+
+当然还有很多其他的配置属性，目前这三个就够了，多了你不懂我更不懂~~~
+
+打开src目录下的index.js文件，修改代码如下：
+```
+import Vue from 'vue'
+import App from './App.vue'
+
+new Vue ({
+  el: '#app',
+  render: h => h(App)
+})
+```
+
+
+OK，一切就绪，命令行输入`npm run dev`，发现页面完美展现了出来，页面中展示的内容就是APP.vue的内容
+*（这是在解决问题1哦）*
+可能你还有一个疑惑
+
+疑惑：我们已经手动创建了一个index.html文件，插件把生成好的bundle.js文件注入到这个文件中不行吗？为什么还要以这个文件为模板，再去生成一个html文件呢？
+
+答案：当你运行npm run dev之后，webpack-dev-server把由html-webpack-plugin生成好的index.html文件和由webpack打包好的bundle.js文件统统放到了电脑的内存中，然后浏览器去加载展示的
+，这也就是为什么要再生成一个的原因，因为咱们自己写的这个index.html存在磁盘上，而由html-webpack-plugin插件生成的index.html存在内存中，两个完全不是一个东西，我们可以在浏览器控制台Elements和Sources两个面板看到这一点
+
+Elements面板
+![](./issue-image/issue5.png)
+Sources面板
+![](./issue-image/issue6.png)
+
+
+这一节东西不多，但是挺难理解的。如果你看了3遍还没有看懂，那么请V我：13341128625
+
+总共安装了两个东西，有不懂的自己再百度百度，哈哈
+* `webpack-dev-server`
+* `html-webpack-plugin`
+

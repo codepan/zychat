@@ -6,7 +6,7 @@
   export default {
     data () {
       return {
-        text: 'codepan yangcx'
+        text: 'codepan yangcx 哈哈哈'
       }
     }
   }

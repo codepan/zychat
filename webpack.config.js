@@ -2,7 +2,8 @@ const path = require('path')
 const {VueLoaderPlugin} = require('vue-loader')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 module.exports = {
-  // mode: 'development',
+  mode: 'development',
+  devtool: '#source-map',
   entry: path.join(__dirname, './src/index.js'),
   output: {
     filename: "bundle.js",

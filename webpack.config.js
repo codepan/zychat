@@ -38,6 +38,10 @@ module.exports = {
           },
           'sass-loader'
         ]
+      },
+      {
+        test: /.png/,
+        loader: 'file-loader'
       }
     ]
   },

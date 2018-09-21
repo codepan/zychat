@@ -1,5 +1,8 @@
 <template>
-    <div id="test">{{text}}</div>
+    <div id="test">
+        <img src="./assets/test1.png" alt="">
+        <p>{{text}}</p>
+    </div>
 </template>
 
 <script>

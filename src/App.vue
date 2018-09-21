@@ -1,7 +1,5 @@
 <template>
-    <div id="test">
-        {{text}}
-    </div>
+    <div id="test">{{text}}</div>
 </template>
 
 <script>
@@ -13,9 +11,15 @@
     }
   }
 </script>
-<style scoped>
+<style scoped lang="scss">
+    $color: red;
     #test{
         font-size: 12px;
-        color: green;
+        color: $color;
+
+        width: 200px;
+        height: 200px;
+        border: 1px solid blue;
+        border-radius: 20px;
     }
 </style>

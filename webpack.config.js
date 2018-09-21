@@ -18,6 +18,26 @@ module.exports = {
       {
         test: /.css$/,
         use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /.(js|vue)$/,
+        loader: 'eslint-loader',
+        enforce: 'pre',
+        include: path.resolve(__dirname, 'src')
+      },
+      {
+        test: /.scss$/,
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              plugins: [require('autoprefixer')('last 100 versions')]
+            }
+          },
+          'sass-loader'
+        ]
       }
     ]
   },

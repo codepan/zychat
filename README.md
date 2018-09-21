@@ -128,8 +128,8 @@ module.exports = {
 ```
 "linebreak-style": "off"
 ```
-
 再次运行`./node_modules/.bin/eslint src`
+
 ![](./issue-image/issue14.png)
 
 又报错了，说是：期望使用1个Tab键缩进，但却发现使用了2个空格缩进了。这错误我搞了好长时间，后来我发现和使用的IDE有关系，Webstorm默认1Tab=4Space，并且缩进采用的是space而不是tab，所以eslint就报告了这个错误，
@@ -234,7 +234,9 @@ new Vue ({
 上面我们定义了一个变量a，但是并没有使用它
 
 控制台输入命令：`npm run build`，发现控制台报错了
+
 ![](./issue-image/issue15.png)
+
 翻译一下：src目录下面的index.js文件发生了错误，错误在第4行第7列，变量a被声明了但是从来没有使用过它，触发了eslint的`no-unused-vars`规范
 
 出现错误，就说明我们配置的没有错误（这句话好绕哦），webpack帮我们启动了eslint，并且eslint也正常工作了
@@ -257,7 +259,9 @@ new Vue ({
 }
 ```
 然后再次运行`npm run build`，发现控制台又多了一个错误：
+
 ![](./issue-image/issue16.png)
+
 大概意思是：错误发生在App.vue文件中的第5行第1列，解析错误：相邻的JSX元素必须封装在封闭的标签中
 
 其实翻译完了，我还是一脸懵逼，不知其所云。于是去国外的网站（某度完全搜不到）找答案，eslint默认把不是js文件中的js代码全部当做JSX（React中非常重要的概念）对待，而JSX有个要求就是需要在最外层包裹一个父元素，
@@ -341,7 +345,7 @@ module.exports = {
 
 还想了解更多配置，[请移步到这篇文章](https://blog.csdn.net/mafan121/article/details/77965252)
 # vue中使用sass
-sass是个css预处理去，就是可以定义变量、方法、代码块等等的一个东西，相信你懂，不太懂的话继续百度。
+sass是个css预处理器，就是可以定义变量、方法、代码块等等的一个东西，相信你懂，不太懂的话继续百度。
 
 先看看webpack4.*能不能自己处理sass语法（抱着试一试的态度），我们打开App.vue文件，修改`<style>`标签中的内容如下：
 ```scss
@@ -385,7 +389,9 @@ module.exports = {
 在rules再加如上的配置，意思是scss文件我们使用sass-loader处理后变成css然后交给css-loader，最后再交给style-loader
 
 运行`npm run dev`
+
 ![](./issue-image/issue18.png)
+
 报错了，提示也很明白：App.vue文件发生了错误，在sass-loader执行的时候没有发现`node-sass`模块，好吧，sass-loader模块的运行依赖node-sass，所以，下面安装一下`node-sass`
 ```
 npm i -D node-sass
@@ -498,6 +504,7 @@ npm i -D postcss-loader
 
 
 重启项目，会看到浏览器控制台中前缀已经被加上
+
 ![](./issue-image/issue20.png)
 
 

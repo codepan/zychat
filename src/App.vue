@@ -1,6 +1,8 @@
 <template>
     <div id="test">
         <img src="./assets/test1.png" alt="">
+        <img src="./assets/test2.jpg" alt="">
+        <img src="./assets/test3.jpeg" alt="">
         <p>{{text}}</p>
     </div>
 </template>

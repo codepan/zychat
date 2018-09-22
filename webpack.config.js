@@ -40,8 +40,11 @@ module.exports = {
         ]
       },
       {
-        test: /.png/,
-        loader: 'file-loader'
+        test: /.(png|jpg|jpeg|gif)/,
+        loader: 'url-loader',
+        options: {
+          limit: 1024 * 20
+        }
       }
     ]
   },

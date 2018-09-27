@@ -7,4 +7,21 @@
 <body>
     <div id="app"></div>
 </body>
+<script>
+    var xhr = new XMLHttpRequest()
+
+    xhr.onreadystatechange = () => {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          console.dir(xhr)
+        }
+      }
+    }
+
+    xhr.open('post', 'http://localhost:3000/postUserInfo', true)
+    xhr.send(JSON.stringify({
+      id: 233,
+      name: '小明'
+    }))
+</script>
 </html>

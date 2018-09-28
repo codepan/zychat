@@ -1,9 +1,10 @@
 import Vue from 'vue'
 import App from './App.vue'
 
-// const a = 3
+import router from './router/index.js'
 
 new Vue ({
   el: '#app',
-  render: h => h(App)
+  render: h => h(App),
+  router
 })

@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "webpack-dev-server --inline --hot --pen --port 4000",
-    "build": "webpack --config webpack.config.js"
+    "dev": "NODE_ENV=development webpack-dev-server --inline --hot --port 4000",
+    "build": "NODE_ENV=production webpack --config webpack.config.js"
   },
   "author": "codepan yangcx",
   "license": "ISC",
@@ -23,6 +23,7 @@
     "postcss": "^7.0.2",
     "postcss-loader": "^3.0.0",
     "sass-loader": "^7.1.0",
+    "sinoiov-ui": "^0.3.0",
     "style-loader": "^0.23.0",
     "url-loader": "^1.1.1",
     "vue": "^2.5.17",

@@ -230,8 +230,17 @@ node app.js
 ```
 此时就会在本地3000端口启动服务器，再次刷新页面，就会看到上面的数据在控制台输出。
 
-# 封装axios
+# 安装sinoiov-ui组件库
+这个组件库是我自主研发的一个基于vue2.*的组件库，里面包含了很多常见的组件。
 
+引入它的目的是帮助我们快速开发产品，精力集中在业务代码上，而不是组件上，之前写了一个Button组件，呵呵，那Button组件简直没法看，所以将用组件库中的Button组件去替代它。还有接下来咱们封装axios时会用到Loading组件，用来请求接口时给与用户一个反馈。
+
+```
+npm i -D sinoiov-ui
+```
+安装之后，还需要做一些事情才能在vue文件中使用，但是目前先什么都不做，因为下面会现在js文件中去使用它。
+
+# 封装axios
 不用封装直接像上面那样引入axios，然后axios.get或者axios.post等等发送异步请求也是没有任何问题的，但是作为一个过来人，我想说：当项目越来越大，接口请求越来越多的时候就会发现，不封装axios会产生非常多的冗余代码。
 
 举一些冗余的例子：
@@ -250,9 +259,272 @@ node app.js
 
 不知你是否还记得在之前咱们创建的src/common/js/http.js这个文件？它就是咱们用来封装axios的地方，说干就干，打开这个文件。
 
-这里我要插一句：
+首先下载安装axios
+```
+npm i -D axios
+```
+然后在http.js文件中写入如下的代码：
+```js
+import axios from 'axios'
+import {Loading} from 'sinoiov-ui'
+
+/* eslint-disable no-undef */
+const baseURL = process.env.NODE_ENV === 'development' ? window.config.baseURL.development : process.env.NODE_ENV === 'production' ? window.config.baseURL.production : window.config.baseURL.test
+
+const $http = axios.create({
+  baseURL,
+  timeout: 30000
+})
+
+$http.interceptors.request.use(request => {
+  Loading.open()
+  return request
+}, error => {
+  return Promise.reject(error)
+})
+$http.interceptors.response.use(response => {
+  Loading.close()
+  return response
+}, error => {
+  return Promise.reject(error)
+})
+
+export default $http
+
+```
+我不敢再继续封装继续写代码了，因为简单这么几行代码我想我应该需要解释好长时间，因为这里面有太多的未知东西需要去阐述。接下来一行一行去分析上面的代码，在分析的过程中将无法避开不去延伸扩展讲解某些（其实是很多）知识点，
+所以你需要做好准备。
+
+***如果在这之前到文章开头的东西你都是云里雾里的话，那我建议再读几遍，然后再接着向下看***。
+
+下面我来解释一下上面的(http.js)代码
+
+`import axios from 'axios'` 引入axios
+  
+`import {Loading} from 'sinoiov-ui` 单独引入sinoiov-ui中的Loading模块，使用它会显示或隐藏loading
+
+`const baseURL = process.env.NODE_ENV === 'development' ? window.config.baseURL.development : process.env.NODE_ENV === 'production' ? window.config.baseURL.production : window.config.baseURL.test`
+
+这行代码里面需要解释下面三点：
+1. 问题1：定义baseURL这个常量是个什么鬼？
+2. 问题2：process.env.NODE_EVN是个什么鬼？
+3. 问题3：window.config.baseURL.xxx是个什么鬼？
+
+#### 问题1和2
+前两问题我打算放在一块来讲，因为这两个东西放在一块的意思就是-***"根据环境确定baseURL"***。那么问题来了，为什么要根据环境确定baseURL？回答这个问题需要搞懂四个问题：
+1. baseURL是什么？
+2. 环境是什么？
+3. 为什么要区分环境？
+4. 环境如何区分？
+
+  * baseURL是什么？
+  
+    baseURL就是接口地址前面固定不变的那串东西，一个项目接口地址都是有规律可循的，例如用户注册登录两个接口可能形如：http://xxx.xxx.com/api/login和http://xxx.xxx.com/api/register，那么baseURL就是http://xxx.xxx.com/api/
+  不设置baseURL的话，每次请求都需要写前面这么一大串东西，很是麻烦
+  
+  * 环境是什么？
+  
+    环境通俗点讲就是目前项目所处的阶段：开发阶段？测试阶段？生产阶段？对应到环境上面就是：开发环境、测试环境和生产环境
+ 
+  * 为什么要区分环境？
+  
+    因为不同的环境接口请求前面的baseURL地址是不一样的，因为测试服务器和生产服务器肯定不是同一台机器呀，自然而然地址就不一样。开发环境和测试环境接口地址可能是同一个。
+    当然在开发阶段也经常出现下面的这种情况，就是现在要调试A同学写的接口，此时接口地址就是A同学的机器，过一会要调试B同学写的接口，此时接口地址就是B同学的机器，因为这样调试起来快啊。不然A或者B开发完都要放到测试服务器上然后才能调试，如果有问题又得重复
+    部署一次，很是麻烦。所以在开发阶段，一般都是调试谁的接口，就连接谁的机器。所以也就要区分环境。
+
+  * 环境如何区分？
+  
+    区分环境有两种实现方式：
+    * 通过window.location.hostname判断host来区分
+    * 通过nodeJS的process.env.xxx来判断
+     
+      process.env又是什么呢？process是nodeJS内置的一个模块，它是干什么的这里不展开，env是process的一个属性，env又是一个对象，这个属性表示当前nodeJS的执行环境，我们可以在package.json中的scripts配置项中配置的命令中，向env属性动态添加key-value，
+      例如我们添加一个NODE_ENV的key，NODE_ENV的值是"development"，届时我们就可以使用process.env.NODE_ENV来获取到设置的"development"这个值。
+        
+      在我以前开发的项目中，都是采用第一种方式通过host来区分环境的，但是那样显得有些低端，并且也存在一些问题（具体有什么问题我这里也不展开讲了）。所以本项目我将采用process.env的方式来进行环境区分
+     
+ 经过上面的分析，问题1，2相信你已经基本上搞懂了，现在还剩下：process.env.NODE_ENV如何来搞的问题。
+ 
+ 首先说`NODE_ENV`这玩意跟nodeJS跟webpack半毛钱关系都没有，完全就是前端工程师约定俗成的一个自定义的变量（用来判断环境）而已。
+ 
+ 现在我定下来系统包括两个环境，一个开发环境，一个生产环境，没有测试环境哦，因为*自己开发，自己测试，哈哈！！*
+ * 开发环境：`NODE_ENV=development`
+ * 生产环境：`NODE_ENV=production`
+ 
+ 想想看，在什么地方我们能知道当前程序是在开发环境还是在生产环境？？ 。。。。。 20s过去了，还记得前面我说过在package.json中的scripts配置项下面的dev和build配置项中可以设置参数吗？
+ 没错，突破口就在这里：
+ * npm run dev 不就是告诉程序当前在开发环境吗？？
+ * npm run build 不就是告诉程序当前在生产环境吗？？
+ 
+那好，就在这两个命令里面定义上面的NODE_ENV环境变量
+```
+ "scripts": {
+    "dev": "NODE_ENV=development webpack-dev-server --inline --hot --port 4000",
+    "build": "NODE_ENV=production webpack --config webpack.config.js"
+  },
+```
+#### 问题3
+window.config.baseURL.xxx能看出来这是在全局对象window上面挂载了一个config对象，这个对象里面配置项目在不同环境下所需的baseURL。
+
+首先先来看看这个东西写在哪里，又是如何工作的呢？
+
+项目根目录创建一个config.js文件，然后在这个文件中写入如下代码：
+```js
+window['config'] = {
+  baseURL: {
+    development: 'http://localhost:3000/',
+    production: 'http://localhost:3000/',
+    test: ''
+  }
+}
+```
+然后再打开根目录下面的index.html文件，引入这个config.js文件：
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Title</title>
+  <script src="config.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+</body>
+</html>
+```
+
+这下明白http.js文件中window.config.baseURL.development、window.config.baseURL.production和window.config.baseURL.test这三个东西是怎么来的了吧。
+
+我猜想你会问我，为什么要这么大费周折，将它定义在config.js文件里，然后再在index.html文件中引入这个config.js，然后在http.js中引用呢？为什么不直接定义在http.js文件中呢？
+
+下面的这段解答，有一定大型项目经验的话会更容易理解一些：
+* 如果定义在http.js文件中，那么上线之后哪天接口地址变了，仅仅是接口地址变了，你不得不进到http.js文件中手动修改，然后再build，然后上线，因为线上的代码都是压缩混淆之后的，根本无法修改。
+* 如果把它定义在一个单独的文件中(config.js)的话，我们可以通过配置，让webpack不要打包，不要压缩混淆这个config.js文件，而是原封不动的将其输出出来，这样我们线上代码中就会看到这个config.js文件，这样修改接口地址等等修改其他的全局配置的东西，
+就不需要再去改源码了，而是直接在服务器上就能操作完成。
+
+
+剩下下面的这些代码我将采用注释的方式作以讲解
+```js
+/*
+create()方法产生一个axios的实例，在这里将这个实例命名为$http
+create()方法接受一个options作为参数，其中
+  baseURL相当于baseURL: baseURL 以后请求时只需要写相对请求地址即可，axios会自定在前面拼接上baseURL
+  timeout: 30000 设置请求超时时间为30s
+*/
+const $http = axios.create({
+  baseURL,
+  timeout: 30000
+})
+
+/*
+interceptors是axios配置拦截器的方式
+request.use是配置request拦截器
+request拦截器的意思就是请求在真正的被发送之前需要执行的某些逻辑
+
+use()方法接收两个函数作为参数，第一个为成功回调函数，第二个为失败回调函数
+成功回调函数中我们打开了一个loading
+失败回调函数中我们返回了Promise.reject(error)，返回这个东西就会触发Promise的catch回调
+ */
+$http.interceptors.request.use(request => {
+  Loading.open()
+  return request
+}, error => {
+  return Promise.reject(error) // 这段如果理解不了，可以先放着不用管
+})
+
+/*
+interceptors是axios配置拦截器的方式
+response.use是配置response拦截器
+response拦截器的意思就是请求在收到响应后需要执行的某些逻辑
+
+use()方法接收两个函数作为参数，第一个为成功回调函数，第二个为失败回调函数
+成功回调函数中我们关闭了loading
+失败回调函数中我们返回了Promise.reject(error)，返回这个东西就会触发Promise的catch回调
+ */
+$http.interceptors.response.use(response => {
+  Loading.close()
+  return response
+}, error => {
+  return Promise.reject(error)
+})
+
+export default $http // 到处$http实例
+```
+
+
+OK，到此这个http.js文件我们就讲解完了，下面就要用它发送http请求了，替代掉原生的axios。
+
+首先打开入口文件index.js:
+```js
+import Vue from 'vue'
+import App from './App.vue'
+
+import router from './router/index.js'
+
+import $http from './common/js/http.js' // 引入$http实例
+
+// 将$Http实例挂载到Vue的实例上面，将来在vue文件中就可以使用this.$http来调用$http实例了
+Vue.prototype.$http = $http
+
+new Vue ({
+  el: '#app',
+  render: h => h(App),
+  router
+})
+```
+
+然后打开contact-list.vue文件：
+* 删除掉这段代码`import axios from 'axios'`，因为已经全局引入了$http
+* 修改发送请求的那段代码为如下：
+  ```js
+  this.$http.get('findContacts').then(res => {
+    console.log(res.data)
+  })
+  ```
+可以看到`http://localhost:3000/findContacts`这个地址变成了`findContacts`，是不是简洁了好多，这就是baseURL的功劳，它会帮助拼接真正的URL---baseURL + 'findContacts'
+
+到此为止，我们可以在http.js加入下面两个输出，然后启动项目，看看控制台会输出什么？
+```js
+/* eslint-disable no-undef */
+console.dir(process.env)
+/* eslint-disable no-undef */
+console.log(process.env.NODE_ENV)
+```
+那两行注释是告诉eslint不要校验变量未定义的错误，process是全局变量所以根本不需要定义，eslint太弱智了，不加注释编译会报错，不用理解注释是什么意思，照做就行
+
+`npm run dev`看看控制台Console:
+
+![](./issue-image/issue34.png)
+
+完美，请求又再次成功了，仔细的你会发现一个诡异的事情：process.env是个空对象，为什么process.env.NODE_ENV却有值，值是development？这个问题我也不知道，目前还没有搞明白是什么原因（捂脸，很害羞哈）。
+
+控制台输出的development难道真的就是`"dev": "NODE_ENV=development webpack-dev-server --inline --hot --port 4000"`这里定义的这个吗？
+
+做个试验，将`development`改为`dev`，然后重启项目，查看控制台的输出，MLGB，果然依旧是development，这又是为什么呢？这个development究竟从何而来？
+这个问题我知道，我告诉你吧，它来自webpack.config.js文件中的mode配置项，不信的话你可以修改它试试，前提是这个mode取值只能是：none、development或production，不要乱填，不然就报错了。
+
+也就是说：其他文件（除过webpack.config.js）中process.env.NODE_ENV这个玩意已经被webpack4.*固化为自己的东西了，webpack.config.js中的mode配置项就相当于给全局属性process.env属性上面挂了一个NODE_ENV的属性，值就是mode的值
+```
+{
+  mode: 'development'
+}
+// 就相当于
+process.env.NODE_ENV = 'development'
+```
+
+为什么说除过webpack.config.js文件呢？因为你可以在这里输出一下process.env.NODE_ENV看看，它的值却是package.json中定义的那个值。
 
 
 
+那也就是说之前在package.json中的scripts配置项里面折腾半天，一点鸟用也没有？当然不是，我们需要把mode的值变成process.env.NODE_ENV，你说是不是？
+这个npm run dev时mode就是development，npm run build时mode就是production。
+
+>悄悄告诉你：
+>* mode这个鬼玩意我之前也不知道，这是个坑(webpack4.*以后)
+>* 在webpack3.*以及以前的版本中，没有mode的概念，实现环境的判断还需要一个DefinePlugin的webpack插件才能搞定
+>* webpack4.*中动态修改mode即可
+
+但是这样是有局限性的，因为mode取值只能是：none、development或production这三个值，而我们的环境中有test环境，只是目前项目没有用test环境而已，那以后要用怎么办？
+`mode: 'test'`是会报错的，呃，好吧，看来还是需要动脑筋啊。不过以后用到再说，真的不敢再讲了，再讲这节成为天书就可不好了。
 
 

@@ -3,11 +3,12 @@ const {VueLoaderPlugin} = require('vue-loader')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
-  mode: process.env.NODE_ENV,
+  // mode: process.env.NODE_ENV,
+  mode: 'development',
   devtool: '#source-map',
   entry: path.join(__dirname, './src/index.js'),
   output: {
-    filename: "bundle.js",
+    filename: 'bundle.js',
     path: path.join(__dirname, 'dist')
   },
   module: {
@@ -31,13 +32,21 @@ module.exports = {
         use: [
           'style-loader',
           'css-loader',
+          'sass-loader',
           {
             loader: 'postcss-loader',
             options: {
               plugins: [require('autoprefixer')('last 100 versions')]
             }
           },
-          'sass-loader'
+          {
+            loader: 'sass-resources-loader',
+            options: {
+                resources: [
+                    path.resolve(__dirname, './src/common/style/index.scss')
+                ]
+            }
+          }
         ]
       },
       {

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import {Loading} from 'sinoiov-ui'
+import {Loading} from 'kiwi-vui'
 
 /* eslint-disable no-undef */
 console.dir(process.env)
@@ -15,13 +15,20 @@ const $http = axios.create({
 
 $http.interceptors.request.use(request => {
   Loading.open()
+    // if (request.url.indexOf('/user/') !== -1){
+    //     let user = localStorage.getItem('user')
+    //     if (!user && user.length === 0){
+    //         this.$router.push('/user/login')
+    //     }
+    // }
   return request
 }, error => {
   return Promise.reject(error)
 })
+
 $http.interceptors.response.use(response => {
   Loading.close()
-  return response
+  return response && response.data
 }, error => {
   return Promise.reject(error)
 })
